@@ -1,0 +1,58 @@
+{
+  "summary": "ForgeTrack tested end-to-end. Backend: 21/21 pytest cases pass — auth (trainer/client), clients CRUD + cascade delete, exercises CRUD, programs upsert (create+update with renamed days), logs create/list/filter by exercise_id and week_number, _id excluded everywhere. Frontend (mobile 375x900, Expo web preview): Login screen renders with FORGE TRACK brand, role toggle, ENTER button; trainer login redirects to /trainer; create-client modal opens, accepts name and shows generated code; client detail tabs (HISTORY/PROGRAM) and EDIT PROGRAM button present; program editor add-week/day/save flow works (verified via UI + API); client login with generated code lands on /client Program tab; week and day toggles + exercise tap navigate to /client/log (verified once visually) which shows PROGRAM TARGET, set-0-weight, set-0-reps-slider, set-0-reps-value, set-0-toggle-custom that swaps to set-0-reps-custom TextInput, ADD SET adds set-1, SAVE button persists; exercise editor with name/muscle/instructions saves. ONE UI ISSUE: on mobile width, the New Client modal extends past the viewport — the CREATE and DONE buttons are partially below the visible area (Playwright reports 'element outside viewport' even with force). The Pressable onPress was intermittent under repeated automation runs but functional on real mouse events. No React Native red screens; no console errors. No deprecated expo packages detected. Trainer client HISTORY tab navigated successfully.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Trainer New Client modal (/app/frontend/app/trainer/index.tsx)",
+        "issue": "On 375x667 viewport, the bottom-sheet modal content overflows below the screen — CREATE button and DONE button (testID=create-client-btn / close-modal-btn) sit outside the viewport. The sheet uses KeyboardAvoidingView with autoFocus on input which pushes content below visible area on web. Recommend wrapping sheet in ScrollView or constraining sheet height/justifyContent='flex-end' with maxHeight so action buttons stay visible without scrolling.",
+        "testID": "create-client-btn, close-modal-btn",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Trainer /trainer/index modal",
+        "issues": [
+          "Modal bottom sheet exceeds 667px viewport height — primary action (CREATE/DONE) clipped off-screen on small phones. Add maxHeight or scroll."
+        ]
+      }
+    ],
+    "react_native_issues": [
+      {
+        "component": "react-native-web Pressable",
+        "issue": "Minor console warning: 'props.pointerEvents is deprecated. Use style.pointerEvents'. Likely from a 3rd-party (LinearGradient or similar) inside react-native-web. Not blocking but should be tracked. Reference: console output during initial load."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_forgetrack.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix Trainer New Client modal layout so CREATE and DONE buttons remain inside the 375x667 viewport (cap sheet height or wrap in ScrollView).",
+    "Investigate the react-native-web 'props.pointerEvents is deprecated' console warning and update the offending component to use style.pointerEvents."
+  ],
+  "critical_code_review_comments": [
+    "server.py is clean, async throughout, _id excluded from all projections, env-driven config — no issues found.",
+    "Frontend testID coverage is thorough — all critical interactive elements have testIDs matching the requested spec.",
+    "Trainer modal uses Modal + KeyboardAvoidingView with autoFocus which can push content beyond viewport on small screens — see UI bug above.",
+    "Single trainer pseudo-auth (code lookup) — acceptable for this MVP per problem statement."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_forgetrack.py (created)"
+  ],
+  "success_rate": {
+    "backend": "100% (21/21)",
+    "frontend": "~90% (login flows, trainer/client navigation, program editor open + save, exercise editor open + save, client log screen elements + 12+ toggle behavior + ADD SET verified; full save-and-see-in-history UI loop verified once)"
+  },
+  "seed_data_creation": "Created TEST_FlowClient (code 8C7ADZ, id df93ae30-127a-47a9-b5ce-a8c8c49b612c), exercise TEST_Bench (id 860b6de1-d763-46c6-a3e1-dc013fc62c10), TEST_E2E_88046 client (code VYZUSW), TEST_UI_Squat exercise, and a program for TEST_FlowClient. These remain in the DB for the next agent to reuse.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "EXPO_PUBLIC_BACKEND_URL=https://fittrack-progress-12.preview.emergentagent.com. Trainer code=TRAINER. Existing seeded client TEST_FlowClient has code 8C7ADZ and a program with one Push day containing one exercise — convenient for log/history retests. Backend regression file is /app/backend/tests/test_forgetrack.py — run with `pytest backend/tests/test_forgetrack.py -v`. React-native-web Pressable onPress sometimes needs a real Playwright .click(force=True) (not JS .click()) since Pressable listens to pointer events; budget at least 1500ms wait after navigation before clicking. The New Client modal's primary action is clipped on 375x667 — use viewport 375x900 or scroll the sheet, or `page.evaluate('document.querySelector(...).click()')` to bypass.",
+  "rca_of_issue": "Modal viewport clipping: trainer/index.tsx renders a slide-up sheet inside a Modal+KeyboardAvoidingView. Because autoFocus on TextInput triggers the on-screen keyboard logic in react-native-web's KeyboardAvoidingView, the sheet pushes the action buttons below the visible viewport on shorter screens. Fix: add `maxHeight: '70%'` and `overflow: 'hidden'` to styles.sheet, or wrap sheet content in a ScrollView with contentContainerStyle paddingBottom for buttons."
+}
