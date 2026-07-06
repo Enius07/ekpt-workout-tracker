@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Pressable,
   FlatList,
+  Alert,
   Modal,
   ScrollView,
   TextInput,
@@ -18,6 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, Client } from '@/src/lib/api';
 import { loadSession } from '@/src/lib/session';
 import { theme, spacing, radius } from '@/src/lib/theme';
+import { TouchableOpacity } from 'react-native';
+import { Button } from 'react-native';
 
 export default function TrainerClients() {
   const router = useRouter();
@@ -27,6 +30,7 @@ export default function TrainerClients() {
   const [newName, setNewName] = useState('');
   const [saving, setSaving] = useState(false);
   const [newClient, setNewClient] = useState<Client | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -89,24 +93,111 @@ export default function TrainerClients() {
               <Text style={styles.emptySub}>Tap + to add your first client</Text>
             </View>
           }
+
+          
+          
           renderItem={({ item }) => (
-            <Pressable
-              testID={`client-${item.id}`}
-              style={styles.card}
-              onPress={() =>
-                router.push({ pathname: '/trainer/client-detail', params: { id: item.id } })
-              }
-            >
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardName}>{item.name}</Text>
-                <Text style={styles.cardCode}>CODE · {item.code}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={theme.onSurfaceTertiary} />
-            </Pressable>
-          )}
+  <View style={styles.row}>
+    
+    {/* CARD */}
+    <Pressable
+      style={styles.card}
+      onPress={() =>
+        router.push({
+          pathname: '/trainer/client-detail',
+          params: { id: item.id },
+        })
+      }
+    >
+      <View style={styles.avatar}>
+        <Text style={styles.avatarText}>
+          {item.name.charAt(0).toUpperCase()}
+        </Text>
+      </View>
+
+      <View style={{ flex: 1 }}>
+        <Text style={styles.cardName}>{item.name}</Text>
+        <Text style={styles.cardCode}>CODE · {item.code}</Text>
+      </View>
+
+      <Ionicons
+        name="chevron-forward"
+        size={18}
+        color={theme.onSurfaceTertiary}
+      />
+    </Pressable>
+
+    {/* DELETE */}
+    <TouchableOpacity
+  style={styles.deleteButton}
+  onPress={() => setDeleteTarget(item)}
+>
+  <Ionicons name="trash-outline" size={22} color="#d32f2f" />
+</TouchableOpacity>
+<Modal
+  visible={!!deleteTarget}
+  transparent
+  animationType="fade"
+  onRequestClose={() => setDeleteTarget(null)}
+>
+  <View style={{
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  }}>
+    
+    <View style={{
+      width: "85%",
+      backgroundColor: theme.surface,
+      padding: spacing.lg,
+      borderRadius: radius.lg,
+    }}>
+      
+      <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 10 }}>
+        Delete client
+      </Text>
+
+      <Text style={{ marginBottom: spacing.lg }}>
+        Are you sure you want to delete {deleteTarget?.name}? This cannot be undone.
+      </Text>
+
+      <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 10 }}>
+        
+        <Pressable
+          onPress={() => setDeleteTarget(null)}
+          style={{ padding: 10 }}
+        >
+          <Text>Cancel</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={async () => {
+          if (!deleteTarget) return;
+            try {
+              await api.deleteClient(deleteTarget.id);
+              setDeleteTarget(null);
+              load();
+            } catch (e) {
+              console.error(e);
+            }
+          }}
+          style={{ padding: 10 }}
+        >
+          <Text style={{ color: "red", fontWeight: "600" }}>
+            Delete
+          </Text>
+        </Pressable>
+
+      </View>
+
+    </View>
+  </View>
+</Modal>
+  </View>
+)}
+        
+        
         />
       )}
 
@@ -184,6 +275,8 @@ export default function TrainerClients() {
         </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
+
+    
   );
 }
 
@@ -192,7 +285,10 @@ const styles = StyleSheet.create({
   header: { padding: spacing.lg },
   title: { color: theme.onSurface, fontSize: 28, fontWeight: '900', letterSpacing: 2 },
   subtitle: { color: theme.onSurfaceTertiary, fontSize: 12, marginTop: 4 },
+ 
+ 
   card: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.surfaceSecondary,
@@ -274,4 +370,16 @@ const styles = StyleSheet.create({
     marginVertical: spacing.lg,
   },
   codeText: { color: theme.brand, fontSize: 36, fontWeight: '900', letterSpacing: 6 },
+  row: {
+  flexDirection: "row",
+  alignItems: "center",
+  width: "100%",
+},
+
+
+
+deleteButton: {
+  paddingHorizontal: 12,
+  paddingVertical: 10,
+},
 });

@@ -24,7 +24,7 @@ export default function TrainerChat() {
       sender="trainer"
       title={client?.name?.toUpperCase() || 'CHAT'}
       subtitle="Direct message"
-      onBack={() => router.back()}
+      onBack={() => router.replace('/trainer/messages')}
     />
   );
 }

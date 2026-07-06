@@ -84,10 +84,11 @@ export default function ExerciseEditor() {
       };
       if (editId) {
         await api.updateExercise(editId, payload);
+        router.replace('/trainer/exercises');
       } else {
         await api.createExercise(payload);
+        router.replace('/trainer/exercises');
       }
-      router.back();
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -100,7 +101,7 @@ export default function ExerciseEditor() {
     setSaving(true);
     try {
       await api.deleteExercise(editId);
-      router.back();
+      router.replace('/trainer/exercises');
     } finally {
       setSaving(false);
     }
@@ -109,7 +110,7 @@ export default function ExerciseEditor() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.headerBar}>
-        <Pressable testID="back-btn" onPress={() => router.back()} style={styles.iconBtn}>
+        <Pressable testID="back-btn" onPress={() => router.replace('/trainer/exercises')} style={styles.iconBtn}>
           <Ionicons name="chevron-back" size={24} color={theme.onSurface} />
         </Pressable>
         <Text style={styles.headerTitle}>{editId ? 'EDIT EXERCISE' : 'NEW EXERCISE'}</Text>
