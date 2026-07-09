@@ -4,19 +4,29 @@ import { theme } from '@/src/lib/theme';
 
 export default function TrainerLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: theme.surfaceSecondary,
-          borderTopColor: theme.border,
-          borderTopWidth: 1,
-        },
-        tabBarActiveTintColor: theme.brand,
-        tabBarInactiveTintColor: theme.onSurfaceTertiary,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', letterSpacing: 1 },
-      }}
-    >
+   <Tabs
+  screenOptions={{
+    headerShown: false,
+    tabBarStyle: {
+      backgroundColor: theme.surfaceSecondary,
+      borderTopColor: theme.border,
+      borderTopWidth: 1,
+      height: 75,
+      paddingBottom: 10,
+      paddingTop: 5,
+    },
+    tabBarIconStyle: {
+      marginTop: -4,
+    },
+    tabBarActiveTintColor: theme.brand,
+    tabBarInactiveTintColor: theme.onSurfaceTertiary,
+    tabBarLabelStyle: { 
+      fontSize: 11, 
+      fontWeight: '700', 
+      letterSpacing: 1 
+    },
+  }}
+>
       <Tabs.Screen
         name="index"
         options={{
@@ -32,15 +42,6 @@ export default function TrainerLayout() {
         }}
       />
       <Tabs.Screen
-        name="messages"
-        options={{
-          title: 'CHAT',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: 'PROFILE',
@@ -50,7 +51,6 @@ export default function TrainerLayout() {
       <Tabs.Screen name="client-detail" options={{ href: null }} />
       <Tabs.Screen name="program-editor" options={{ href: null }} />
       <Tabs.Screen name="exercise-editor" options={{ href: null }} />
-      <Tabs.Screen name="chat" options={{ href: null }} />
     </Tabs>
   );
 }
