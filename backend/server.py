@@ -287,6 +287,32 @@ async def upsert_program(payload: ProgramUpsert):
 
 @api_router.post("/logs", response_model=WorkoutLog)
 async def create_log(payload: WorkoutLogCreate):
+    existing = await db.workout_logs.find_one(
+        {
+            "client_id": payload.client_id,
+            "exercise_id": payload.exercise_id,
+            "week_number": payload.week_number,
+            "day_number": payload.day_number,
+        },
+        {"_id": 0},
+    )
+
+    if existing:
+        await db.workout_logs.update_one(
+            {"id": existing["id"]},
+            {
+                "$set": {
+                    "sets": [s.model_dump() for s in payload.sets],
+                    "notes": payload.notes,
+                    "completed_at": utcnow_iso(),
+                }
+            },
+        )
+        existing["sets"] = [s.model_dump() for s in payload.sets]
+        existing["notes"] = payload.notes
+        existing["completed_at"] = utcnow_iso()
+        return WorkoutLog(**existing)
+
     obj = WorkoutLog(**payload.model_dump())
     await db.workout_logs.insert_one(obj.model_dump())
     return obj

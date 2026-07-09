@@ -80,3 +80,17 @@ memory/test_credentials.md
 
 # Mobile development
 android-sdk/
+
+# Environment files
+.env
+.env.*
+
+# Expo
+.expo/
+.metro-cache/
+
+# Python cache
+.ruff_cache/
+
+# Test outputs
+test_reports/

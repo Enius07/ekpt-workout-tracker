@@ -20,7 +20,7 @@ import { api, Client } from '@/src/lib/api';
 import { loadSession } from '@/src/lib/session';
 import { theme, spacing, radius } from '@/src/lib/theme';
 import { TouchableOpacity } from 'react-native';
-import { Button } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 
 export default function TrainerClients() {
   const router = useRouter();
@@ -116,9 +116,25 @@ export default function TrainerClients() {
       </View>
 
       <View style={{ flex: 1 }}>
-        <Text style={styles.cardName}>{item.name}</Text>
-        <Text style={styles.cardCode}>CODE · {item.code}</Text>
-      </View>
+  <Text style={styles.cardName}>{item.name}</Text>
+
+  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <Text style={styles.cardCode}>CODE · {item.code}</Text>
+
+    <TouchableOpacity
+      onPress={async () => {
+        await Clipboard.setStringAsync(item.code);
+      }}
+      style={{ marginLeft: 8 }}
+    >
+      <Ionicons
+        name="copy-outline"
+        size={18}
+        color={theme.brand}
+      />
+    </TouchableOpacity>
+  </View>
+</View>
 
       <Ionicons
         name="chevron-forward"
