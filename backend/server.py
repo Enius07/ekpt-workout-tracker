@@ -140,20 +140,6 @@ class WorkoutLogCreate(BaseModel):
     notes: Optional[str] = ""
 
 
-class Message(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_id: str
-    sender: Literal['trainer', 'client']
-    text: str
-    created_at: str = Field(default_factory=utcnow_iso)
-
-
-class MessageCreate(BaseModel):
-    client_id: str
-    sender: Literal['trainer', 'client']
-    text: str
-
-
 # ============ AUTH ============
 
 @api_router.post("/auth/login", response_model=LoginResponse)
@@ -204,7 +190,6 @@ async def delete_client(client_id: str):
     await db.clients.delete_one({"id": client_id})
     await db.programs.delete_many({"client_id": client_id})
     await db.workout_logs.delete_many({"client_id": client_id})
-    await db.messages.delete_many({"client_id": client_id})
     return {"ok": True}
 
 
@@ -330,25 +315,6 @@ async def get_logs(client_id: str, exercise_id: Optional[str] = None, week_numbe
 
 
 # ============ MESSAGES ============
-
-@api_router.post("/messages", response_model=Message)
-async def create_message(payload: MessageCreate):
-    text = payload.text.strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="Message text is required")
-    obj = Message(
-        client_id=payload.client_id,
-        sender=payload.sender,
-        text=text,
-    )
-    await db.messages.insert_one(obj.model_dump())
-    return obj
-
-
-@api_router.get("/messages/{client_id}", response_model=List[Message])
-async def list_messages(client_id: str):
-    docs = await db.messages.find({"client_id": client_id}, {"_id": 0}).sort("created_at", 1).to_list(5000)
-    return [Message(**d) for d in docs]
 
 
 @api_router.get("/")
