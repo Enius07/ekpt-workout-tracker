@@ -232,7 +232,7 @@ export default function LogExercise() {
                   <TextInput
                     testID={`set-${idx}-weight`}
                     style={styles.weightInput}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     value={String(s.weight)}
                     onChangeText={(v) => updateWeight(idx, v)}
                     selectTextOnFocus

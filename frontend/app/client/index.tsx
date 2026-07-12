@@ -59,7 +59,6 @@ export default function ClientProgram() {
           <Text style={styles.hello}>HELLO,</Text>
           <Text style={styles.name}>{clientName.toUpperCase()}</Text>
         </View>
-        <Ionicons name="flame" size={28} color={theme.brand} />
       </View>
 
       {loading ? (
