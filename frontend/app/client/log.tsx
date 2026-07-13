@@ -43,6 +43,7 @@ export default function LogExercise() {
   const weekNumber = Number(params.week_number || 1);
   const dayNumber = Number(params.day_number || 1);
 
+  const [weightInputs, setWeightInputs] = useState<Record<number, string>>({});
   const [ex, setEx] = useState<Exercise | null>(null);
   const [sets, setSets] = useState<LoggedSet[]>([]);
   const [previousLog, setPreviousLog] = useState<WorkoutLog | null>(null);
@@ -233,9 +234,11 @@ export default function LogExercise() {
                     testID={`set-${idx}-weight`}
                     style={styles.weightInput}
                     keyboardType="decimal-pad"
-                    value={String(s.weight)}
-                    onChangeText={(v) => updateWeight(idx, v)}
-                    selectTextOnFocus
+                    value={weightInputs[idx] ?? String(s.weight)}
+                    onChangeText={(v) => {
+                      setWeightInputs((prev) => ({ ...prev, [idx]: v }));
+                      updateWeight(idx, v);
+                    }}
                   />
 
                   <View style={styles.repsHead}>
