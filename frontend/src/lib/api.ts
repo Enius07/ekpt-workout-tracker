@@ -1,4 +1,4 @@
-const BASE_URL = "https://ekpt-workout-tracker.onrender.com";
+const BASE_URL = "http://127.0.0.1:8000";
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE_URL}/api${path}`, {
@@ -21,6 +21,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export type Role = 'trainer' | 'client';
+
 
 export interface LoginResp {
   role: Role;
@@ -100,6 +101,13 @@ export interface Message {
   created_at: string;
 }
 
+export interface SavedProgramme {
+  id: string;
+  name: string;
+  weeks: Week[];
+  created_at: string;
+}
+
 export const api = {
   login: (role: Role, code: string) =>
     request<LoginResp>('/auth/login', { method: 'POST', body: JSON.stringify({ role, code }) }),
@@ -119,10 +127,25 @@ export const api = {
   deleteExercise: (id: string) => request<{ ok: boolean }>(`/exercises/${id}`, { method: 'DELETE' }),
 
   getProgram: (clientId: string) => request<Program>(`/programs/${clientId}`),
+
   upsertProgram: (clientId: string, name: string, weeks: Week[]) =>
     request<Program>('/programs', {
       method: 'POST',
       body: JSON.stringify({ client_id: clientId, name, weeks }),
+    }),
+
+  saveProgramme: (name: string, weeks: Week[]) =>
+    request<SavedProgramme>('/saved-programmes', {
+      method: 'POST',
+      body: JSON.stringify({ name, weeks }),
+    }),
+
+   listSavedProgrammes: () =>
+    request<SavedProgramme[]>('/saved-programmes'),
+
+  deleteSavedProgramme: (id: string) =>
+    request<{ ok: boolean }>(`/saved-programmes/${id}`, {
+      method: 'DELETE',
     }),
 
   createLog: (payload: Omit<WorkoutLog, 'id' | 'completed_at'>) =>

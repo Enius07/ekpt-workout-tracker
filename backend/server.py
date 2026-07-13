@@ -107,6 +107,11 @@ class Program(BaseModel):
     weeks: List[Week] = []
     updated_at: str = Field(default_factory=utcnow_iso)
 
+class SavedProgramme(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str = "Weekly Programme"
+    weeks: List[Week] = []
+    created_at: str = Field(default_factory=utcnow_iso)
 
 class ProgramUpsert(BaseModel):
     client_id: str
@@ -267,6 +272,19 @@ async def upsert_program(payload: ProgramUpsert):
     await db.programs.insert_one(obj.model_dump())
     return obj
 
+@api_router.post("/saved-programmes", response_model=SavedProgramme)
+async def create_saved_programme(payload: SavedProgramme):
+    obj = SavedProgramme(
+        name=payload.name,
+        weeks=payload.weeks,
+    )
+    await db.saved_programmes.insert_one(obj.model_dump())
+    return obj
+
+@api_router.get("/saved-programmes", response_model=List[SavedProgramme])
+async def list_saved_programmes():
+    docs = await db.saved_programmes.find({}, {"_id": 0}).to_list(500)
+    return [SavedProgramme(**d) for d in docs]
 
 # ============ WORKOUT LOGS ============
 
@@ -312,6 +330,11 @@ async def get_logs(client_id: str, exercise_id: Optional[str] = None, week_numbe
         q["week_number"] = week_number
     docs = await db.workout_logs.find(q, {"_id": 0}).sort("completed_at", -1).to_list(2000)
     return [WorkoutLog(**d) for d in docs]
+
+@api_router.delete("/saved-programmes/{programme_id}")
+async def delete_saved_programme(programme_id: str):
+    result = await db.saved_programmes.delete_one({"id": programme_id})
+    return {"ok": result.deleted_count > 0}
 
 
 # ============ MESSAGES ============

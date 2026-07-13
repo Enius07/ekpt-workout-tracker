@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { api, Exercise, ExerciseItem, Week } from '@/src/lib/api';
+import { api, Exercise, ExerciseItem, Week, SavedProgramme } from '@/src/lib/api';
 import { theme, spacing, radius } from '@/src/lib/theme';
 
 export default function ProgramEditor() {
@@ -30,6 +30,9 @@ export default function ProgramEditor() {
   const [saving, setSaving] = useState(false);
   const [picker, setPicker] = useState<{ weekIdx: number; dayIdx: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [savedProgrammes, setSavedProgrammes] = useState<SavedProgramme[]>([]);
+  const [importModal, setImportModal] = useState(false);  
 
   useEffect(() => {
     (async () => {
@@ -62,6 +65,23 @@ export default function ProgramEditor() {
       return [...w, clone];
     });
   };
+
+ const saveAsProgramme = async (wIdx: number) => {
+  const weekToSave = weeks[wIdx];
+
+  try {
+    await api.saveProgramme(
+      weekToSave.name || `Week ${weekToSave.week_number}`,
+      [weekToSave]
+    );
+
+    setNotice('Week saved');
+    setTimeout(() => setNotice(null), 2000);
+  } catch (e: any) {
+    setNotice(e.message || 'Failed to save');
+    setTimeout(() => setNotice(null), 2000);
+  }
+};
 
   const removeWeek = (i: number) => {
     setWeeks((w) =>
@@ -207,10 +227,29 @@ export default function ProgramEditor() {
     }
   };
 
+  const deleteSavedProgramme = async (id: string) => {
+  try {
+    await api.deleteSavedProgramme(id);
+
+    setSavedProgrammes((prev) => prev.filter((p) => p.id !== id));
+
+    setNotice('Programme deleted');
+    setTimeout(() => setNotice(null), 2000);
+  } catch (e: any) {
+    setNotice(e.message || 'Failed to delete');
+    setTimeout(() => setNotice(null), 2000);
+  }
+};
+
   const exMap = Object.fromEntries(exercises.map((e) => [e.id, e]));
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {notice && (
+        <View style={styles.notice}>
+          <Text style={styles.noticeText}>{notice}</Text>
+        </View>
+      )}
       <View style={styles.headerBar}>
         <Pressable testID="back-btn" onPress={() => router.back()} style={styles.iconBtn}>
           <Ionicons name="chevron-back" size={24} color={theme.onSurface} />
@@ -252,21 +291,31 @@ export default function ProgramEditor() {
                     />
                   </View>
                   <Pressable
-                    testID={`duplicate-week-${wIdx}`}
-                    onPress={() => duplicateWeek(wIdx)}
-                    hitSlop={8}
-                    style={styles.iconAction}
-                  >
-                    <Ionicons name="copy-outline" size={18} color={theme.onSurfaceSecondary} />
-                  </Pressable>
-                  <Pressable
-                    testID={`remove-week-${wIdx}`}
-                    onPress={() => removeWeek(wIdx)}
-                    hitSlop={8}
-                    style={styles.iconAction}
-                  >
-                    <Ionicons name="trash-outline" size={18} color={theme.error} />
-                  </Pressable>
+                  testID={`duplicate-week-${wIdx}`}
+                  onPress={() => duplicateWeek(wIdx)}
+                  hitSlop={8}
+                  style={styles.iconAction}
+                >
+                  <Ionicons name="copy-outline" size={18} color={theme.onSurfaceSecondary} />
+                </Pressable>
+
+                <Pressable
+                  testID={`save-week-${wIdx}`}
+                  onPress={() => saveAsProgramme(wIdx)}
+                  hitSlop={8}
+                  style={styles.iconAction}
+                >
+                  <Ionicons name="save-outline" size={18} color={theme.brand} />
+                </Pressable>
+
+                <Pressable
+                  testID={`remove-week-${wIdx}`}
+                  onPress={() => removeWeek(wIdx)}
+                  hitSlop={8}
+                  style={styles.iconAction}
+                >
+                  <Ionicons name="trash-outline" size={18} color={theme.error} />
+                </Pressable>
                 </View>
                 <TextInput
                   testID={`week-notes-${wIdx}`}
@@ -365,6 +414,19 @@ export default function ProgramEditor() {
             </Pressable>
 
             {error && <Text style={styles.error}>{error}</Text>}
+            <Pressable 
+              testID="import-saved-btn" 
+              onPress={async () => {
+                const saved = await api.listSavedProgrammes();
+                setSavedProgrammes(saved);
+                setImportModal(true);
+              }}
+              style={styles.addWeek}
+            >
+              <Ionicons name="download-outline" size={18} color={theme.brand} />
+              <Text style={styles.addWeekText}>IMPORT SAVED</Text>
+            </Pressable>
+
           </ScrollView>
 
           <View style={styles.ctaBar}>
@@ -424,6 +486,48 @@ export default function ProgramEditor() {
           </View>
         </View>
       </Modal>
+      <Modal
+  visible={importModal}
+  transparent
+  animationType="slide"
+  onRequestClose={() => setImportModal(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalBox}>
+      <Text style={styles.modalTitle}>IMPORT SAVED PROGRAMME</Text>
+
+      {savedProgrammes.map((p) => (
+        <View key={p.id} style={styles.savedRow}>
+  <Pressable
+    style={styles.savedItem}
+    onPress={() => {
+      setWeeks((w) => [...w, ...p.weeks]);
+      setImportModal(false);
+      setNotice('Programme imported');
+      setTimeout(() => setNotice(null), 2000);
+    }}
+  >
+    <Text style={styles.savedText}>{p.name}</Text>
+  </Pressable>
+
+  <Pressable
+    onPress={() => deleteSavedProgramme(p.id)}
+    hitSlop={8}
+  >
+    <Ionicons name="trash-outline" size={18} color={theme.error} />
+  </Pressable>
+</View>
+      ))}
+
+      <Pressable
+        style={styles.closeButton}
+        onPress={() => setImportModal(false)}
+      >
+        <Text style={styles.closeText}>CLOSE</Text>
+      </Pressable>
+    </View>
+  </View>
+</Modal>
     </SafeAreaView>
   );
 }
@@ -611,4 +715,75 @@ const styles = StyleSheet.create({
   pickMuscle: { color: theme.brand, fontSize: 11, marginTop: 2, letterSpacing: 1 },
   cancel: { padding: spacing.lg, alignItems: 'center' },
   cancelText: { color: theme.onSurfaceTertiary },
+
+  notice: {
+  position: 'absolute',
+  top: 20,
+  left: 20,
+  right: 20,
+  backgroundColor: theme.brand,
+  paddingVertical: 12,
+  paddingHorizontal: 16,
+  borderRadius: radius.md,
+  zIndex: 999,
+  alignItems: 'center',
+},
+
+noticeText: {
+  color: theme.surface,
+  fontSize: 14,
+  fontWeight: '700',
+},
+
+modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  justifyContent: 'center',
+  padding: spacing.lg,
+},
+
+modalBox: {
+  backgroundColor: theme.surface,
+  borderRadius: radius.lg,
+  padding: spacing.lg,
+},
+
+modalTitle: {
+  fontSize: 16,
+  fontWeight: '800',
+  color: theme.onSurface,
+  marginBottom: spacing.md,
+},
+
+savedItem: {
+  paddingVertical: 14,
+  borderBottomWidth: 1,
+  borderBottomColor: theme.border,
+},
+
+savedRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+},
+
+
+savedText: {
+  fontSize: 15,
+  fontWeight: '700',
+  color: theme.onSurface,
+},
+
+closeButton: {
+  marginTop: spacing.md,
+  alignItems: 'center',
+  paddingVertical: 12,
+},
+
+closeText: {
+  fontWeight: '800',
+  color: theme.brand,
+}
+
+
 });
