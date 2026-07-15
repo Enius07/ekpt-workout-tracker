@@ -251,7 +251,10 @@ export default function ProgramEditor() {
         </View>
       )}
       <View style={styles.headerBar}>
-        <Pressable testID="back-btn" onPress={() => router.back()} style={styles.iconBtn}>
+        <Pressable testID="back-btn" onPress={() => router.replace({
+            pathname: '/trainer/client-detail',
+            params: { id: clientId },
+          })} style={styles.iconBtn}>
           <Ionicons name="chevron-back" size={24} color={theme.onSurface} />
         </Pressable>
         <Text style={styles.headerTitle}>PROGRAM</Text>
@@ -501,7 +504,13 @@ export default function ProgramEditor() {
   <Pressable
     style={styles.savedItem}
     onPress={() => {
-      setWeeks((w) => [...w, ...p.weeks]);
+    setWeeks((w) => [
+        ...w,
+        ...p.weeks.map((week, index) => ({
+          ...week,
+          week_number: w.length + index + 1,
+        })),
+      ]);
       setImportModal(false);
       setNotice('Programme imported');
       setTimeout(() => setNotice(null), 2000);

@@ -15,7 +15,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       const j = JSON.parse(text);
       detail = j.detail || text;
     } catch {}
-    throw new Error(detail || `HTTP ${res.status}`);
+    throw new Error(`${res.status} ${res.statusText}: ${options.method || 'GET'} ${path} - ${detail}`);
   }
   return res.json() as Promise<T>;
 }
